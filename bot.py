@@ -2,6 +2,7 @@ import sys
 import logging
 import argparse
 from time import sleep
+from textwrap import dedent
 from logging.handlers import RotatingFileHandler
 
 import requests
@@ -15,8 +16,10 @@ def parse_response(response):
     response = response.json()
     response_status = response.get('status')
     accepted_work = 'К сожалению, в работе нашлись ошибки.'
-    not_accepted_work = 'Преподавателю всё понравилось, ' \
-                        'можно приступать к следующему уроку!'
+    not_accepted_work = dedent('''\
+    Преподавателю всё понравилось,\
+    можно приступать к следующему уроку!\
+    ''')
     if response_status == 'found':
         params = {'timestamp': response.get('last_attempt_timestamp')}
         new_attempt = response.get('new_attempts')[0]
@@ -24,9 +27,11 @@ def parse_response(response):
         lesson_url = new_attempt.get('lesson_url')
         lesson_check = new_attempt.get('is_negative')
 
-        message = f'У вас проверили работу "{lesson_title}"\n\n'\
-                  f'{accepted_work if lesson_check else not_accepted_work}\n'\
-                  f'Ссылка на урок: {lesson_url}'
+        message = dedent(f'''\
+        У вас проверили работу "{lesson_title}"
+        {accepted_work if lesson_check else not_accepted_work}
+        Ссылка на урок: {lesson_url}
+        ''')
         return params, message
     else:
         params = {'timestamp': response.get('timestamp_to_request')}
@@ -67,8 +72,10 @@ def main():
     logger.addHandler(handler)
 
     parser = argparse.ArgumentParser(
-        description='Укажите ваш телеграм id, узнать его можно по ссылке:' \
-                    'https://telegram.me/userinfobot'
+        description=dedent('''\
+        Укажите ваш телеграм id, узнать его можно по ссылке: \
+        https://telegram.me/userinfobot
+        ''')
     )
     parser.add_argument('id', type=int, help='телеграм id')
     args = parser.parse_args()
