@@ -12,14 +12,14 @@ logger = logging.getLogger(__file__)
 
 
 def parse_response(response):
-    response_json = response.json()
-    response_status = response_json.get('status')
+    response = response.json()
+    response_status = response.get('status')
     accepted_work = 'К сожалению, в работе нашлись ошибки.'
     not_accepted_work = 'Преподавателю всё понравилось, ' \
                         'можно приступать к следующему уроку!'
     if response_status == 'found':
-        params = {'timestamp': response_json.get('last_attempt_timestamp')}
-        new_attempt = response_json.get('new_attempts')[0]
+        params = {'timestamp': response.get('last_attempt_timestamp')}
+        new_attempt = response.get('new_attempts')[0]
         lesson_title = new_attempt.get('lesson_title')
         lesson_url = new_attempt.get('lesson_url')
         lesson_check = new_attempt.get('is_negative')
@@ -29,7 +29,7 @@ def parse_response(response):
                   f'Ссылка на урок: {lesson_url}'
         return params, message
     else:
-        params = {'timestamp': response_json.get('timestamp_to_request')}
+        params = {'timestamp': response.get('timestamp_to_request')}
         return params, None
 
 
