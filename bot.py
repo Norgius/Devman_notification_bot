@@ -12,32 +12,6 @@ from environs import Env
 logger = logging.getLogger(__file__)
 
 
-def parse_response(response):
-    response = response.json()
-    response_status = response.get('status')
-    accepted_work = 'К сожалению, в работе нашлись ошибки.'
-    not_accepted_work = dedent('''\
-    Преподавателю всё понравилось,\
-    можно приступать к следующему уроку!\
-    ''')
-    if response_status == 'found':
-        params = {'timestamp': response.get('last_attempt_timestamp')}
-        new_attempt = response.get('new_attempts')[0]
-        lesson_title = new_attempt.get('lesson_title')
-        lesson_url = new_attempt.get('lesson_url')
-        lesson_check = new_attempt.get('is_negative')
-
-        message = dedent(f'''\
-        У вас проверили работу "{lesson_title}"
-        {accepted_work if lesson_check else not_accepted_work}
-        Ссылка на урок: {lesson_url}
-        ''')
-        return params, message
-    else:
-        params = {'timestamp': response.get('timestamp_to_request')}
-        return params, None
-
-
 def start_bot(devman_token, telegram_token, person_id):
     url = 'https://dvmn.org/api/long_polling/'
     headers = {'Authorization': f'Token {devman_token}'}
@@ -48,7 +22,27 @@ def start_bot(devman_token, telegram_token, person_id):
         try:
             response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()
-            params, message = parse_response(response)
+            response = response.json()
+            response_status = response.get('status')
+            accepted_work = 'К сожалению, в работе нашлись ошибки.'
+            not_accepted_work = dedent('''\
+            Преподавателю всё понравилось,\
+            можно приступать к следующему уроку!\
+            ''')
+            if response_status == 'found':
+                params = {'timestamp': response.get('last_attempt_timestamp')}
+                new_attempt = response.get('new_attempts')[0]
+                lesson_title = new_attempt.get('lesson_title')
+                lesson_url = new_attempt.get('lesson_url')
+                lesson_check = new_attempt.get('is_negative')
+                message = dedent(f'''\
+                У вас проверили работу "{lesson_title}"
+                {accepted_work if lesson_check else not_accepted_work}
+                Ссылка на урок: {lesson_url}
+                ''')
+            else:
+                params = {'timestamp': response.get('timestamp_to_request')}
+                message = None
             if message:
                 bot.send_message(chat_id=person_id, text=message)
         except requests.exceptions.ReadTimeout as read_timeout:
