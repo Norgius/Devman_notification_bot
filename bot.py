@@ -22,16 +22,19 @@ def start_bot(devman_token, telegram_token, person_id):
         try:
             response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()
-            response = response.json()
-            response_status = response.get('status')
+            info_about_works_check = response.json()
+            response_status = info_about_works_check.get('status')
             accepted_work = 'К сожалению, в работе нашлись ошибки.'
             not_accepted_work = dedent('''\
             Преподавателю всё понравилось,\
             можно приступать к следующему уроку!\
             ''')
             if response_status == 'found':
-                params = {'timestamp': response.get('last_attempt_timestamp')}
-                new_attempt = response.get('new_attempts')[0]
+                params = {
+                    'timestamp': info_about_works_check.get(
+                        'last_attempt_timestamp')
+                }
+                new_attempt = info_about_works_check.get('new_attempts')[0]
                 lesson_title = new_attempt.get('lesson_title')
                 lesson_url = new_attempt.get('lesson_url')
                 lesson_check = new_attempt.get('is_negative')
@@ -41,7 +44,10 @@ def start_bot(devman_token, telegram_token, person_id):
                 Ссылка на урок: {lesson_url}
                 ''')
             else:
-                params = {'timestamp': response.get('timestamp_to_request')}
+                params = {
+                    'timestamp': info_about_works_check.get(
+                        'timestamp_to_request')
+                }
                 message = None
             if message:
                 bot.send_message(chat_id=person_id, text=message)
