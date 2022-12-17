@@ -1,6 +1,5 @@
 import sys
 import logging
-import argparse
 from time import sleep
 from textwrap import dedent
 from logging.handlers import RotatingFileHandler
@@ -17,7 +16,7 @@ def start_bot(devman_token, telegram_token, person_id):
     headers = {'Authorization': f'Token {devman_token}'}
     params = None
     bot = telegram.Bot(telegram_token)
-    logger.info('Телеграм бот запущен')
+    logger.info('Телеграм бот запущен\n')
     while True:
         try:
             response = requests.get(url, headers=headers, params=params)
@@ -53,10 +52,8 @@ def start_bot(devman_token, telegram_token, person_id):
                 bot.send_message(chat_id=person_id, text=message)
         except requests.exceptions.ReadTimeout as read_timeout:
             logger.warning(f'Превышено время ожидания\n{read_timeout}\n')
-            sys.stderr.write(f'Превышено время ожидания\n{read_timeout}\n\n')
         except requests.exceptions.ConnectionError as connect_error:
             logger.warning(f'Произошёл сетевой сбой\n{connect_error}\n')
-            sys.stderr.write(f'Произошёл сетевой сбой\n{connect_error}\n\n')
             sleep(20)
 
 
@@ -69,22 +66,15 @@ def main():
     )
     logger.setLevel(logging.INFO)
     handler = RotatingFileHandler('app.log', maxBytes=15000, backupCount=2)
+    handler = logging.StreamHandler(stream=sys.stdout)
     logger.addHandler(handler)
-
-    parser = argparse.ArgumentParser(
-        description=dedent('''\
-        Укажите ваш телеграм id, узнать его можно по ссылке: \
-        https://telegram.me/userinfobot
-        ''')
-    )
-    parser.add_argument('id', type=int, help='телеграм id')
-    args = parser.parse_args()
 
     env = Env()
     env.read_env()
     devman_token = env.str('DEVMAN_TOKEN')
     telegram_token = env.str('CHECKED_WORK_TELEGRAM_TOKEN')
-    start_bot(devman_token, telegram_token, args.id)
+    telegram_id = env.str('TELEGRAM_ID')
+    start_bot(devman_token, telegram_token, telegram_id)
 
 
 if __name__ == '__main__':
